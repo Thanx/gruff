@@ -18,6 +18,9 @@ class Gruff::Bar < Gruff::Base
   # Line color of the average line
   attr_accessor :average_line_color
 
+  # Below the average bar color
+  attr_accessor :below_average_color
+
   def initialize(*args)
     super
     @spacing_factor = 0.9
@@ -106,8 +109,16 @@ protected
         conv = []
         conversion.get_left_y_right_y_scaled( data_point, conv )
 
+        # if the bar is the below the average, assign another color
+        filling_color = data_row[DATA_COLOR_INDEX]
+        # note: we are using ">" to check if it's below the average because the value
+        # is the bar's y coordinate starting from the top
+        if @show_average && @below_average_color.present? && conv[0] > averages[row_index]
+          filling_color = @below_average_color
+        end
+
         # create new bar
-        @d = @d.fill data_row[DATA_COLOR_INDEX]
+        @d = @d.fill filling_color
         @d = @d.rectangle(left_x, conv[0], right_x, conv[1])
 
         # Calculate center based on bar_width and current row
