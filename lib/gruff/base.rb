@@ -441,7 +441,6 @@ module Gruff
       end
     end
 
-
     protected
 
     # Overridden by subclasses to do the actual plotting of the graph.
@@ -1061,6 +1060,20 @@ module Gruff
         end
         value_set[DATA_VALUES_INDEX] = stacked_values.dup
       end
+    end
+
+
+    #
+    # Draws a horizontal straight line
+    # @param y [Float] Y coordinate to draw the line
+    # @param width = 1 [Integer] Line width
+    # @param color = "#000000" [String] Line color in HEX format
+    #
+    def draw_line(y, width = 1, color = "#000000")
+      @d.stroke_color(color)
+      @d.fill_opacity 0.0
+      @d.stroke_width(width)
+      @d.line(@graph_left, y, @graph_right, y)
     end
 
     private

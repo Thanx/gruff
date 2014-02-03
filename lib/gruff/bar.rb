@@ -6,9 +6,21 @@ class Gruff::Bar < Gruff::Base
   # Spacing factor applied between bars
   attr_accessor :bar_spacing
 
+  # Boolean to show the average line
+  attr_accessor :show_average
+
+  # Line width of the average line
+  attr_accessor :average_line_width
+
+  # Line color of the average line
+  attr_accessor :average_line_color
+
   def initialize(*args)
     super
     @spacing_factor = 0.9
+    @show_average = false
+    @average_line_width = 1
+    @average_line_color = "#000000"
   end
 
   def draw
@@ -68,6 +80,17 @@ protected
       end
     end
 
+    # calculate the average value per each series
+    averages = []
+    if @show_average
+      @norm_data.each do |series|
+        series_average = series[1].average
+        conv = []
+        conversion.get_left_y_right_y_scaled(series_average, conv)
+        averages << conv[0]
+      end
+    end
+
     # iterate over all normalised data
     @norm_data.each_with_index do |data_row, row_index|
 
@@ -101,6 +124,17 @@ protected
 
     # Draw the last label if requested
     draw_label(@graph_right, @column_count) if @center_labels_over_point
+
+    # draw the average line
+    if @show_average
+      averages.each do |average|
+        draw_line(
+          average,
+          @average_line_width,
+          @average_line_color
+        )
+      end
+    end
 
     @d.draw(@base_image)
   end
