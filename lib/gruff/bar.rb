@@ -6,6 +6,9 @@ class Gruff::Bar < Gruff::Base
   # Spacing factor applied between bars
   attr_accessor :bar_spacing
 
+  # Bar corner radius
+  attr_accessor :bar_radius
+
   # Boolean to show the average line
   attr_accessor :show_average
 
@@ -27,6 +30,7 @@ class Gruff::Bar < Gruff::Base
     @show_average = false
     @average_line_width = 1
     @average_line_color = "#000000"
+    @bar_radius = nil
   end
 
   def draw
@@ -119,7 +123,11 @@ protected
 
         # create new bar
         @d = @d.fill filling_color
-        @d = @d.rectangle(left_x, conv[0], right_x, conv[1])
+        if @bar_radius
+          @d = @d.roundrectangle(left_x, conv[0], right_x, conv[1], @bar_radius, @bar_radius)
+        else
+          @d = @d.rectangle(left_x, conv[0], right_x, conv[1])
+        end
 
         # Calculate center based on bar_width and current row
         label_center = @graph_left + 
