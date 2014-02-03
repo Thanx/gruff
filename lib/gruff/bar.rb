@@ -9,6 +9,9 @@ class Gruff::Bar < Gruff::Base
   # Boolean to show the average line
   attr_accessor :show_average
 
+  # The text to add to the average line
+  attr_accessor :average_text
+
   # Line width of the average line
   attr_accessor :average_line_width
 
@@ -137,6 +140,19 @@ protected
     end
 
     @d.draw(@base_image)
+
+    # Draw the average label
+    if @show_average && @average_text.present?
+      averages.each do |average|
+        draw_text(
+          @base_image,
+          @average_text,
+          @graph_right - 20,
+          average - 25,
+          { font_color: @average_line_color }
+        )
+      end
+    end
   end
 
 end
