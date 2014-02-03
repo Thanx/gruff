@@ -6,9 +6,30 @@ class Gruff::Bar < Gruff::Base
   # Spacing factor applied between bars
   attr_accessor :bar_spacing
 
+  # Bar corner radius
+  attr_accessor :bar_radius
+
+  # Boolean to show the average line
+  attr_accessor :show_average
+
+  # The text to add to the average line
+  attr_accessor :average_text
+
+  # Line width of the average line
+  attr_accessor :average_line_width
+
+  # Line color of the average line
+  attr_accessor :average_line_color
+
+  # Below the average bar color
+  attr_accessor :below_average_color
+
   def initialize(*args)
     super
     @spacing_factor = 0.9
+    @show_average = false
+    @average_line_width = 1
+    @average_line_color = "#000000"
   end
 
   def draw
@@ -68,6 +89,17 @@ protected
       end
     end
 
+    # calculate the average value per each series
+    averages = []
+    if @show_average
+      @norm_data.each do |series|
+        series_average = series[1].average
+        conv = []
+        conversion.get_left_y_right_y_scaled(series_average, conv)
+        averages << conv[0]
+      end
+    end
+
     # iterate over all normalised data
     @norm_data.each_with_index do |data_row, row_index|
 
@@ -80,9 +112,21 @@ protected
         conv = []
         conversion.get_left_y_right_y_scaled( data_point, conv )
 
+        # if the bar is the below the average, assign another color
+        filling_color = data_row[DATA_COLOR_INDEX]
+        # note: we are using ">" to check if it's below the average because the value
+        # is the bar's y coordinate starting from the top
+        if @show_average && @below_average_color.present? && conv[0] > averages[row_index]
+          filling_color = @below_average_color
+        end
+
         # create new bar
-        @d = @d.fill data_row[DATA_COLOR_INDEX]
-        @d = @d.rectangle(left_x, conv[0], right_x, conv[1])
+        @d = @d.fill filling_color
+        if @bar_radius.present?
+          @d = @d.roundrectangle(left_x, conv[0], right_x, conv[1], @bar_radius, @bar_radius)
+        else
+          @d = @d.rectangle(left_x, conv[0], right_x, conv[1])
+        end
 
         # Calculate center based on bar_width and current row
         label_center = @graph_left + 
@@ -102,7 +146,31 @@ protected
     # Draw the last label if requested
     draw_label(@graph_right, @column_count) if @center_labels_over_point
 
+    # draw the average line
+    if @show_average
+      averages.each do |average|
+        draw_line(
+          average,
+          @average_line_width,
+          @average_line_color
+        )
+      end
+    end
+
     @d.draw(@base_image)
+
+    # Draw the average label
+    if @show_average && @average_text.present?
+      averages.each do |average|
+        draw_text(
+          @base_image,
+          @average_text,
+          @graph_right - 20,
+          average - 25,
+          { font_color: @average_line_color }
+        )
+      end
+    end
   end
 
 end

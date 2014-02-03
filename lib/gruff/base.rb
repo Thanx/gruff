@@ -441,7 +441,6 @@ module Gruff
       end
     end
 
-
     protected
 
     # Overridden by subclasses to do the actual plotting of the graph.
@@ -891,6 +890,37 @@ module Gruff
       debug { @d.line 0.0, y_offset, @raw_columns, y_offset }
     end
 
+
+    #
+    # Draws text to the specified image
+    #
+    # @param image [] The image you want to draw on
+    # @param text [String] The text you want to draw
+    # @param x_offset [type] [description]
+    # @param y_offset [type] [description]
+    # @param attributes={} [Hash] {
+    #   font_color:   String,     # (optional) Font color
+    #   font_weight:  WeightType, # (optional) RMagick font weight type constant
+    #                             #  http://www.imagemagick.org/RMagick/doc/constants.html#WeightType
+    #   text_gravity: GravityType # (optional) RMagick gravity type constant
+    #                             # http://www.imagemagick.org/RMagick/doc/constants.html#GravityType
+    # }
+    #
+    def draw_text(image, text, x_offset, y_offset, attributes={})
+      return if image.nil? || text.blank?
+
+      @d.fill = attributes[:font_color] || @font_color
+      @d.font = @font if @font
+      @d.stroke('transparent')
+      @d.font_weight = attributes[:font_weight] || NormalWeight
+      @d.pointsize = scale_fontsize(@marker_font_size)
+      @d.gravity = attributes[:text_gravity] || NorthGravity
+      @d = @d.annotate_scaled(image,
+                              1.0, 1.0,
+                              x_offset, y_offset,
+                              text, @scale)
+    end
+
     # Shows an error message because you have no data.
     def draw_no_data
       @d.fill = @font_color
@@ -1061,6 +1091,20 @@ module Gruff
         end
         value_set[DATA_VALUES_INDEX] = stacked_values.dup
       end
+    end
+
+
+    #
+    # Draws a horizontal straight line
+    # @param y [Float] Y coordinate to draw the line
+    # @param width = 1 [Integer] Line width
+    # @param color = "#000000" [String] Line color in HEX format
+    #
+    def draw_line(y, width = 1, color = "#000000")
+      @d.stroke_color(color)
+      @d.fill_opacity 0.0
+      @d.stroke_width(width)
+      @d.line(@graph_left, y, @graph_right, y)
     end
 
     private
