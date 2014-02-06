@@ -208,6 +208,9 @@ module Gruff
     # Default is false
     attr_accessor :use_data_label
 
+    # Boolean to use float numbers or integers for the y-axis labels
+    attr_accessor :y_label_float_format
+
     # If one numerical argument is given, the graph is drawn at 4/3 ratio
     # according to the given width (800 results in 800x600, 400 gives 400x300,
     # etc.).
@@ -286,6 +289,7 @@ module Gruff
       @y_axis_increment = nil
       @stacked = nil
       @norm_data = nil
+      @y_label_float_format = nil
     end
 
     # Sets the top, bottom, left and right margins to +margin+.
@@ -1131,29 +1135,33 @@ module Gruff
     # Return a formatted string representing a number value that should be
     # printed as a label.
     def label(value, increment)
-      label = if increment
-                if increment >= 10 || (increment * 1) == (increment * 1).to_i.to_f
+      if should_draw_floats?
+        label = if increment
+                  if increment >= 10 || (increment * 1) == (increment * 1).to_i.to_f
+                    sprintf('%0i', value)
+                  elsif increment >= 1.0 || (increment * 10) == (increment * 10).to_i.to_f
+                    sprintf('%0.1f', value)
+                  elsif increment >= 0.1 || (increment * 100) == (increment * 100).to_i.to_f
+                    sprintf('%0.2f', value)
+                  elsif increment >= 0.01 || (increment * 1000) == (increment * 1000).to_i.to_f
+                    sprintf('%0.3f', value)
+                  elsif increment >= 0.001 || (increment * 10000) == (increment * 10000).to_i.to_f
+                    sprintf('%0.4f', value)
+                  else
+                    value.to_s
+                  end
+                elsif (@spread.to_f % (@marker_count.to_f==0 ? 1 : @marker_count.to_f) == 0) || !@y_axis_increment.nil?
+                  value.to_i.to_s
+                elsif @spread > 10.0
                   sprintf('%0i', value)
-                elsif increment >= 1.0 || (increment * 10) == (increment * 10).to_i.to_f
-                  sprintf('%0.1f', value)
-                elsif increment >= 0.1 || (increment * 100) == (increment * 100).to_i.to_f
+                elsif @spread >= 3.0
                   sprintf('%0.2f', value)
-                elsif increment >= 0.01 || (increment * 1000) == (increment * 1000).to_i.to_f
-                  sprintf('%0.3f', value)
-                elsif increment >= 0.001 || (increment * 10000) == (increment * 10000).to_i.to_f
-                  sprintf('%0.4f', value)
                 else
                   value.to_s
                 end
-              elsif (@spread.to_f % (@marker_count.to_f==0 ? 1 : @marker_count.to_f) == 0) || !@y_axis_increment.nil?
-                value.to_i.to_s
-              elsif @spread > 10.0
-                sprintf('%0i', value)
-              elsif @spread >= 3.0
-                sprintf('%0.2f', value)
-              else
-                value.to_s
-              end
+      else
+        label = sprintf('%0i', value)
+      end
 
       parts = label.split('.')
       parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{THOUSAND_SEPARATOR}")
@@ -1180,6 +1188,29 @@ module Gruff
       @d.pointsize = font_size
       @d.font = @font if @font
       @d.get_type_metrics(@base_image, text.to_s).width
+    end
+
+    #
+    # Checks the data of all series to look for non-integer numbers
+    # This will be used in order to print the right number type on the
+    # y-axis lables
+    #
+    # @return [Boolean] The value of the instance variable @y_label_float_format
+    # if present or checks if the data has float numbers or not
+    #
+    def should_draw_floats?
+      if @y_label_float_format.nil?
+        @data.each do |series|
+          series[DATA_VALUES_INDEX].each do |value|
+            unless value.is_a? Integer
+              @y_label_float_format = true
+              return
+            end
+          end
+        end
+        @y_label_float_format = false
+      end
+      return @y_label_float_format
     end
 
   end # Gruff::Base
