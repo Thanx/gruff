@@ -478,6 +478,7 @@ module Gruff
         @minimum_value = [@minimum_value, (@minimum_value.to_f / @y_axis_increment).round * @y_axis_increment].min
       end
       make_stacked if @stacked
+      check_data_number_type
     end
 
     # Calculates size of drawable area and generates normalized data.
@@ -1131,29 +1132,33 @@ module Gruff
     # Return a formatted string representing a number value that should be
     # printed as a label.
     def label(value, increment)
-      label = if increment
-                if increment >= 10 || (increment * 1) == (increment * 1).to_i.to_f
+      if @data_has_floats
+        label = if increment
+                  if increment >= 10 || (increment * 1) == (increment * 1).to_i.to_f
+                    sprintf('%0i', value)
+                  elsif increment >= 1.0 || (increment * 10) == (increment * 10).to_i.to_f
+                    sprintf('%0.1f', value)
+                  elsif increment >= 0.1 || (increment * 100) == (increment * 100).to_i.to_f
+                    sprintf('%0.2f', value)
+                  elsif increment >= 0.01 || (increment * 1000) == (increment * 1000).to_i.to_f
+                    sprintf('%0.3f', value)
+                  elsif increment >= 0.001 || (increment * 10000) == (increment * 10000).to_i.to_f
+                    sprintf('%0.4f', value)
+                  else
+                    value.to_s
+                  end
+                elsif (@spread.to_f % (@marker_count.to_f==0 ? 1 : @marker_count.to_f) == 0) || !@y_axis_increment.nil?
+                  value.to_i.to_s
+                elsif @spread > 10.0
                   sprintf('%0i', value)
-                elsif increment >= 1.0 || (increment * 10) == (increment * 10).to_i.to_f
-                  sprintf('%0.1f', value)
-                elsif increment >= 0.1 || (increment * 100) == (increment * 100).to_i.to_f
+                elsif @spread >= 3.0
                   sprintf('%0.2f', value)
-                elsif increment >= 0.01 || (increment * 1000) == (increment * 1000).to_i.to_f
-                  sprintf('%0.3f', value)
-                elsif increment >= 0.001 || (increment * 10000) == (increment * 10000).to_i.to_f
-                  sprintf('%0.4f', value)
                 else
                   value.to_s
                 end
-              elsif (@spread.to_f % (@marker_count.to_f==0 ? 1 : @marker_count.to_f) == 0) || !@y_axis_increment.nil?
-                value.to_i.to_s
-              elsif @spread > 10.0
-                sprintf('%0i', value)
-              elsif @spread >= 3.0
-                sprintf('%0.2f', value)
-              else
-                value.to_s
-              end
+      else
+        label = sprintf('%0i', value)
+      end
 
       parts = label.split('.')
       parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{THOUSAND_SEPARATOR}")
@@ -1180,6 +1185,23 @@ module Gruff
       @d.pointsize = font_size
       @d.font = @font if @font
       @d.get_type_metrics(@base_image, text.to_s).width
+    end
+
+    #
+    # Checks the data of all series to look for non-integer numbers
+    # This will be used in order to print the right number type on the
+    # y-axis lables
+    #
+    def check_data_number_type
+      @data.each do |series|
+        series[DATA_VALUES_INDEX].each do |value|
+         unless value.is_a? Integer
+            @data_has_floats = true
+            return
+          end
+        end
+      end
+      @data_has_floats = false
     end
 
   end # Gruff::Base
