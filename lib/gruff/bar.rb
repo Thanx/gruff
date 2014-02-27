@@ -27,6 +27,12 @@ class Gruff::Bar < Gruff::Base
   # after draw lambda
   attr_accessor :after_drawing_method
 
+  # array of bar indices (which bars to highlight)
+  attr_accessor :highlight_bars
+
+  # color that the highlighted bars should be
+  attr_accessor :highlight_color
+
   def initialize(*args)
     super
     @spacing_factor = 0.9
@@ -34,6 +40,8 @@ class Gruff::Bar < Gruff::Base
     @average_line_width = 1
     @average_line_color = "#000000"
     @bar_radius = nil
+    @highlight_bars = nil
+    @highlight_color = nil
   end
 
   def draw
@@ -125,6 +133,13 @@ protected
         # is the bar's y coordinate starting from the top
         if @show_average && @below_average_color.present? && conv[0] > averages[row_index]
           filling_color = @below_average_color
+        end
+
+        # if we want to highlight some bars and we have a highlight color AND
+        # the current bar (point_index) is in the list of bars we want to highlight,
+        # change it's color
+        if @highlight_bars && @highlight_color.present? && @highlight_bars.include?(point_index)
+          filling_color = @highlight_color
         end
 
         # create new bar
