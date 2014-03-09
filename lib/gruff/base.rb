@@ -638,7 +638,14 @@ module Gruff
               break
             end
           end
-          @marker_count ||= 4
+
+          # add as many lines as the @maximum_value of the chart when
+          # the maximum is less or equal as 4, otherwise just 4 line markers
+          if @maximum_value.to_f <= 4
+            @marker_count ||= @maximum_value
+          else
+            @marker_count ||= 4
+          end
         end
         @increment = (@spread > 0 && @marker_count > 0) ? significant(@spread / @marker_count) : 1
       else
