@@ -211,6 +211,10 @@ module Gruff
     # Boolean to use float numbers or integers for the y-axis labels
     attr_accessor :y_label_float_format
 
+    # Prefix to use for the y-axis labels
+    # Default is ''
+    attr_accessor :y_label_prefix
+
     # If one numerical argument is given, the graph is drawn at 4/3 ratio
     # according to the given width (800 results in 800x600, 400 gives 400x300,
     # etc.).
@@ -290,6 +294,7 @@ module Gruff
       @stacked = nil
       @norm_data = nil
       @y_label_float_format = nil
+      @y_label_prefix = ''
     end
 
     # Sets the top, bottom, left and right margins to +margin+.
@@ -1169,7 +1174,7 @@ module Gruff
       else
         label = sprintf('%0i', value)
       end
-
+      label.prepend(y_label_prefix)
       parts = label.split('.')
       parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{THOUSAND_SEPARATOR}")
       parts.join('.')
